@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { client } from '../lib/sanity'
 import { getCurrentPrice, getCompareAtPrice, getSizeOptions, getLowestPrice, getHighestPrice, getPriceRangeDisplay, getPriceRangeDisplayWithOptions, getColorOptions, getPriceRangeDisplayWithColors } from '../lib/pricing'
 import { useCart } from '../context/CartContext'
+import SEO from './SEO'
 
 const HomePage = () => {
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -59,7 +60,26 @@ const HomePage = () => {
     }
   }, [getTotalItems()])
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <>
+      <SEO 
+        title="Wholesale E-commerce Marketplace"
+        description="Discover premium wholesale products at competitive prices. Fevas offers a curated selection of high-quality items for businesses and resellers. Fast shipping, secure payments, and excellent customer service."
+        keywords="wholesale, e-commerce, marketplace, business supplies, reseller, bulk orders, wholesale prices"
+        url="https://fevasmarketplace.com"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Fevas",
+          "url": "https://fevasmarketplace.com",
+          "description": "Wholesale e-commerce marketplace offering quality products at competitive prices",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://fevasmarketplace.com/shop?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Navigation */}
       <nav className="bg-black/80 backdrop-blur-sm border-b border-amber-800/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -520,6 +540,7 @@ const HomePage = () => {
         </div>
       </footer>
     </div>
+    </>
   )
 }
 
