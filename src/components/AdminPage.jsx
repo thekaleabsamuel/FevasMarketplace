@@ -24,8 +24,10 @@ const AdminPage = () => {
         
         // Try to load from API first
         try {
+          console.log('🔄 Fetching orders from API...')
           const apiOrders = await OrdersService.getAllOrders()
           console.log('✅ Orders loaded from API:', apiOrders)
+          console.log('📊 API Orders count:', apiOrders ? apiOrders.length : 0)
           
           if (apiOrders && apiOrders.length > 0) {
             // Transform the orders to match the admin display format
@@ -37,23 +39,34 @@ const AdminPage = () => {
                   return null
                 }
                 
-                // Validate customer data
-                if (!order.customer || typeof order.customer !== 'object') {
+                // Validate customer data - handle both old and new formats
+                let customerData = order.customer
+                let totalsData = order.totals
+                
+                // Handle case where customer might be a string (old format) or object (new format)
+                if (typeof order.customer === 'string') {
+                  customerData = { firstName: order.customer, lastName: '', email: order.email || 'No email' }
+                } else if (!order.customer || typeof order.customer !== 'object') {
                   console.warn(`Invalid customer data in order ${index}:`, order.customer)
                   return null
                 }
                 
-                // Validate totals data
+                // Handle case where totals might be missing or in different format
                 if (!order.totals || typeof order.totals !== 'object') {
-                  console.warn(`Invalid totals data in order ${index}:`, order.totals)
-                  return null
+                  // Try to get total from different possible locations
+                  totalsData = { 
+                    total: order.total || order.amount || 0,
+                    subtotal: order.subtotal || 0,
+                    shipping: order.shipping || 0,
+                    tax: order.tax || 0
+                  }
                 }
                 
                 // Safe property access with fallbacks
-                const firstName = order.customer.firstName || 'Unknown'
-                const lastName = order.customer.lastName || 'Customer'
-                const email = order.customer.email || 'No email'
-                const total = order.totals.total || 0
+                const firstName = customerData.firstName || 'Unknown'
+                const lastName = customerData.lastName || 'Customer'
+                const email = customerData.email || order.email || 'No email'
+                const total = totalsData.total || 0
                 const date = order.date ? new Date(order.date).toLocaleDateString() : 'Unknown date'
                 
                 return {
@@ -64,11 +77,11 @@ const AdminPage = () => {
                   date: date,
                   shippingAddress: {
                     name: `${firstName} ${lastName}`,
-                    address: order.customer.address || 'No address',
-                    city: order.customer.city || 'No city',
-                    state: order.customer.state || 'No state',
-                    zip: order.customer.zipCode || 'No zip',
-                    country: order.customer.country || 'US'
+                    address: customerData.address || 'No address',
+                    city: customerData.city || 'No city',
+                    state: customerData.state || 'No state',
+                    zip: customerData.zipCode || 'No zip',
+                    country: customerData.country || 'US'
                   }
                 }
               } catch (error) {
@@ -78,6 +91,7 @@ const AdminPage = () => {
             }).filter(Boolean) // Remove null entries
             
             console.log('Formatted orders from API:', formattedOrders)
+            console.log('🔍 Raw API response for debugging:', JSON.stringify(apiOrders, null, 2))
             setOrders(formattedOrders)
             setLoading(false)
             return

@@ -82,9 +82,9 @@ A modern, full-stack e-commerce platform built for wholesale businesses. Feature
    VITE_STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_key
    VITE_SHIPPO_API_KEY=your_shippo_key
    VITE_SANITY_TOKEN=your_sanity_token
-   VITE_EMAILJS_SERVICE_ID=service_tk8ieoz
-   VITE_EMAILJS_TEMPLATE_ID=template_s1pvkof
-   VITE_EMAILJS_USER_ID=6YO2Gqezvy5o5-IlL
+   VITE_EMAILJS_SERVICE_ID=your_EMAILJS_service_id
+   VITE_EMAILJS_TEMPLATE_ID=your_EMAILJS_template_id
+   VITE_EMAILJS_USER_ID=your_EMAILJS_userid
    ```
 
 4. **Sanity Setup**

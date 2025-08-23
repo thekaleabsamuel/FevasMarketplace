@@ -24,7 +24,7 @@ const AboutPage = () => {
             <div className="flex items-center">
               <Link to="/">
                 <img 
-                  src="/Fevas Logo.png" 
+                  src="/Fevas logo 2.png" 
                   alt="Fevas" 
                   className="h-16 w-auto object-contain"
                 />
