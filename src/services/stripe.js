@@ -8,7 +8,7 @@ export class StripeService {
     return await stripePromise
   }
 
-  static async createPaymentIntent(amount) {
+  static async createPaymentIntent(amount, orderData = {}) {
     try {
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
@@ -17,6 +17,7 @@ export class StripeService {
         },
         body: JSON.stringify({
           amount: Math.round(amount * 100), // Convert to cents
+          orderData, // Pass order information for metadata
         }),
       })
 

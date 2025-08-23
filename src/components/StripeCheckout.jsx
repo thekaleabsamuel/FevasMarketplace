@@ -23,7 +23,7 @@ const cardElementOptions = {
 }
 
 // Payment form component
-const PaymentForm = ({ amount, onSuccess, onError, isProcessing, setIsProcessing }) => {
+const PaymentForm = ({ amount, orderData, onSuccess, onError, isProcessing, setIsProcessing }) => {
   const stripe = useStripe()
   const elements = useElements()
   const [error, setError] = useState('')
@@ -54,7 +54,7 @@ const PaymentForm = ({ amount, onSuccess, onError, isProcessing, setIsProcessing
         return
       }
 
-      // Create payment intent via API
+      // Create payment intent via API with order data
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {
@@ -62,6 +62,7 @@ const PaymentForm = ({ amount, onSuccess, onError, isProcessing, setIsProcessing
         },
         body: JSON.stringify({
           amount: Math.round(amount * 100), // Convert to cents
+          orderData, // Include order information for Stripe metadata
         }),
       })
 
@@ -118,11 +119,12 @@ const PaymentForm = ({ amount, onSuccess, onError, isProcessing, setIsProcessing
 }
 
 // Main Stripe checkout component
-const StripeCheckout = ({ amount, onSuccess, onError, isProcessing, setIsProcessing }) => {
+const StripeCheckout = ({ amount, orderData, onSuccess, onError, isProcessing, setIsProcessing }) => {
   return (
     <Elements stripe={stripePromise}>
       <PaymentForm
         amount={amount}
+        orderData={orderData}
         onSuccess={onSuccess}
         onError={onError}
         isProcessing={isProcessing}

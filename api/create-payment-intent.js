@@ -38,7 +38,7 @@ export default async function handler(req, res) {
       apiVersion: '2024-06-20',
     })
     
-    const { amount } = req.body
+    const { amount, orderData = {} } = req.body
 
     if (!amount || amount < 50) {
       console.log('Invalid amount:', amount)
@@ -46,6 +46,22 @@ export default async function handler(req, res) {
     }
 
     console.log('Creating payment intent for amount:', amount)
+    console.log('Order data:', orderData)
+
+    // Prepare metadata for Stripe (limited to 50 keys, 500 chars per value)
+    const metadata = {}
+    
+    if (orderData.orderId) metadata.order_id = String(orderData.orderId).substring(0, 500)
+    if (orderData.customer?.email) metadata.customer_email = String(orderData.customer.email).substring(0, 500)
+    if (orderData.customer?.phone) metadata.customer_phone = String(orderData.customer.phone).substring(0, 500)
+    if (orderData.customer?.firstName && orderData.customer?.lastName) {
+      metadata.customer_name = `${orderData.customer.firstName} ${orderData.customer.lastName}`.substring(0, 500)
+    }
+    if (orderData.totals?.subtotal) metadata.subtotal = String(orderData.totals.subtotal)
+    if (orderData.totals?.shipping) metadata.shipping = String(orderData.totals.shipping)
+    if (orderData.totals?.tax) metadata.tax = String(orderData.totals.tax)
+    if (orderData.items?.length) metadata.item_count = String(orderData.items.length)
+    if (orderData.notes) metadata.notes = String(orderData.notes).substring(0, 500)
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
@@ -53,6 +69,9 @@ export default async function handler(req, res) {
       automatic_payment_methods: {
         enabled: true,
       },
+      metadata,
+      description: orderData.orderId ? `Order ${orderData.orderId}` : `Fevas Order - $${(amount/100).toFixed(2)}`,
+      receipt_email: orderData.customer?.email || null, // Send receipt to customer automatically
     })
 
     console.log('Payment intent created successfully:', paymentIntent.id)

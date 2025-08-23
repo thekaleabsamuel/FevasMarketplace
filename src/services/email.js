@@ -1,26 +1,85 @@
 import emailjs from '@emailjs/browser'
 
+// EmailJS will be initialized when needed with proper configuration
+
 // Email service for sending order confirmations and receipts
 class EmailService {
   static async sendOrderConfirmation(order, customerEmail) {
     try {
-      const emailData = {
+      // Try original order confirmation format first (what was working before)
+      const orderConfirmationData = {
         to_email: customerEmail,
-        cc_email: 'Fevasasamn@gmail.com', // Company email gets CC'd
-        subject: `Order Confirmation - ${order.id}`,
-        message_html: this.generateOrderEmailHTML(order),
-        message_text: this.generateOrderEmailText(order),
         order_id: order.id,
         customer_name: `${order.customer.firstName} ${order.customer.lastName}`,
-        order_total: `$${(order.totals.total / 100).toFixed(2)}`,
+        order_total: `$${order.totals.total.toFixed(2)}`,
         order_date: new Date(order.date).toLocaleDateString()
       }
 
-      // Send email using EmailJS
-      return await this.sendEmail(emailData)
+      console.log('📧 Preparing email data (order confirmation format):', orderConfirmationData)
+
+      // Try original template first
+      try {
+        const customerResult = await this.sendEmail(orderConfirmationData, 'template_s1pvkof')
+        console.log('✅ Original template worked!')
+        
+        // Send business notification
+        await this.sendBusinessNotification(order)
+        return customerResult
+      } catch (originalError) {
+        console.log('❌ Original template failed, trying contact form format...')
+        
+        // Fallback to contact form format
+        const contactFormData = {
+          to_name: `${order.customer.firstName} ${order.customer.lastName}`,
+          to_email: customerEmail,
+          from_name: 'Fevas Team',
+          message: `Order Confirmation - ${order.id}
+
+Thank you for your order!
+
+Order Details:
+- Order ID: ${order.id}
+- Customer: ${order.customer.firstName} ${order.customer.lastName}
+- Date: ${new Date(order.date).toLocaleDateString()}
+- Total: $${order.totals.total.toFixed(2)}
+
+Your order has been received and is being processed.
+
+Contact us: Fevasasamn@gmail.com`
+        }
+
+        const customerResult = await this.sendEmail(contactFormData, 'template_contact_form')
+        
+        // Send business notification
+        await this.sendBusinessNotification(order)
+        return customerResult
+      }
     } catch (error) {
       console.error('Error sending order confirmation email:', error)
       throw error
+    }
+  }
+
+  static async sendBusinessNotification(order) {
+    try {
+      console.log('📧 Sending business notification email...')
+      
+      // Create business notification using the same template
+      const businessEmailData = {
+        to_email: 'Fevasasamn@gmail.com',
+        order_id: order.id,
+        customer_name: `${order.customer.firstName} ${order.customer.lastName}`,
+        order_total: `$${order.totals.total.toFixed(2)}`,
+        order_date: new Date(order.date).toLocaleDateString()
+      }
+
+      console.log('📧 Business notification data:', businessEmailData)
+      
+      // Send business notification
+      return await this.sendEmail(businessEmailData)
+    } catch (error) {
+      console.error('Error sending business notification:', error)
+      // Don't fail the order if business notification fails
     }
   }
 
@@ -111,8 +170,80 @@ class EmailService {
     `
   }
 
+  // Helper methods to generate detailed order information
+  static generateOrderDetailsText(order) {
+    return `
+Order ID: ${order.id}
+Date: ${new Date(order.date).toLocaleDateString()}
+Status: ${order.status}
+Notes: ${order.notes || 'None'}
+    `.trim()
+  }
+
+  static generateShippingAddressText(order) {
+    return `
+${order.customer.firstName} ${order.customer.lastName}
+${order.customer.address}
+${order.customer.city}, ${order.customer.state} ${order.customer.zipCode}
+${order.customer.country}
+Phone: ${order.customer.phone || 'Not provided'}
+    `.trim()
+  }
+
+  static generateItemsListText(order) {
+    return order.items.map(item => `
+- ${item.product?.title || item.name || 'Product'}
+  Quantity: ${item.quantity}
+  Price: $${(item.price || 0).toFixed(2)}
+  ${item.selectedOption ? `Option: ${item.selectedOption}` : ''}
+  ${item.selectedColor ? `Color: ${item.selectedColor}` : ''}
+  Subtotal: $${((item.price || 0) * item.quantity).toFixed(2)}
+    `.trim()).join('\n')
+  }
+
+  static generatePaymentInfoText(order) {
+    return `
+Payment Method: ${order.payment.method}
+Payment ID: ${order.payment.paymentIntentId}
+Card: ${order.payment.brand} ending in ${order.payment.last4}
+    `.trim()
+  }
+
+  static generateTotalsBreakdownText(order) {
+    return `
+Subtotal: $${order.totals.subtotal.toFixed(2)}
+Shipping: $${order.shipping.cost.toFixed(2)}
+Tax: $${order.totals.tax.toFixed(2)}
+Total: $${order.totals.total.toFixed(2)}
+    `.trim()
+  }
+
+  // Test method to verify EmailJS is working
+  static async testEmailJS() {
+    try {
+      console.log('🧪 Testing EmailJS connection...')
+      
+      // Try with minimal template variables first
+      const testData = {
+        to_name: 'Test Customer',
+        to_email: 'test@example.com',
+        message: 'This is a test email from Fevas',
+        from_name: 'Fevas Team'
+      }
+      
+      console.log('🧪 Test data:', testData)
+      
+      const result = await this.sendEmail(testData)
+      console.log('✅ EmailJS test successful:', result)
+      return result
+    } catch (error) {
+      console.error('❌ EmailJS test failed:', error)
+      throw error
+    }
+  }
+
   static generateOrderEmailText(order) {
-    const formatCurrency = (amount) => `$${(amount / 100).toFixed(2)}`
+    const formatCurrency = (amount) => `$${(amount || 0).toFixed(2)}`
     
     return `
 ORDER CONFIRMATION - ${order.id}
@@ -122,23 +253,24 @@ Thank you for your order! Your order has been successfully placed and is being p
 ORDER DETAILS:
 Order ID: ${order.id}
 Date: ${new Date(order.date).toLocaleDateString()}
-Customer: ${order.customer}
-Email: ${order.email}
+Customer: ${order.customer.firstName} ${order.customer.lastName}
+Email: ${order.customer.email}
 
 SHIPPING ADDRESS:
-${order.shippingAddress.name}
-${order.shippingAddress.address}
-${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.zip}
-${order.shippingAddress.country}
+${order.customer.firstName} ${order.customer.lastName}
+${order.customer.address}
+${order.customer.city}, ${order.customer.state} ${order.customer.zipCode}
+${order.customer.country}
+Phone: ${order.customer.phone || 'Not provided'}
 
 ORDER ITEMS:
 ${order.items.map(item => `
-- ${item.title}
+- ${item.product?.title || item.name || 'Product'}
   Quantity: ${item.quantity}
   Price: ${formatCurrency(item.price)}
   ${item.selectedOption ? `Option: ${item.selectedOption}` : ''}
   ${item.selectedColor ? `Color: ${item.selectedColor}` : ''}
-  Subtotal: ${formatCurrency(item.price * item.quantity)}
+  Subtotal: ${formatCurrency((item.price || 0) * item.quantity)}
 `).join('')}
 
 TOTALS:
@@ -147,9 +279,9 @@ Shipping: ${formatCurrency(order.shipping.cost)}
 Tax: ${formatCurrency(order.totals.tax)}
 Total: ${formatCurrency(order.totals.total)}
 
-${order.coupon ? `
-COUPON APPLIED:
-${order.coupon.code} - ${order.coupon.description}
+${order.notes ? `
+NOTES:
+${order.notes}
 ` : ''}
 
 NEED HELP?
@@ -162,17 +294,30 @@ Your trusted partner for quality wholesale products.
     `.trim()
   }
 
-  static async sendEmail(emailData) {
+  static async sendEmail(emailData, customTemplateId = null) {
     try {
       console.log('📧 Sending email via EmailJS...')
       console.log('Email data:', emailData)
       
       // EmailJS configuration
-      const serviceId = process.env.VITE_EMAILJS_SERVICE_ID || 'service_tk8ieoz'
-      const templateId = process.env.VITE_EMAILJS_TEMPLATE_ID || 'template_s1pvkof'
-      const userId = process.env.VITE_EMAILJS_USER_ID || '6YO2Gqezvy5o5-IlL'
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_tk8ieoz'
+      const templateId = customTemplateId || import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_s1pvkof'
+      const userId = import.meta.env.VITE_EMAILJS_USER_ID || '6YO2Gqezvy5o5-IlL'
       
       console.log('EmailJS Config:', { serviceId, templateId, userId })
+      console.log('Environment variables check:', {
+        VITE_EMAILJS_SERVICE_ID: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        VITE_EMAILJS_TEMPLATE_ID: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        VITE_EMAILJS_USER_ID: import.meta.env.VITE_EMAILJS_USER_ID
+      })
+      
+      // Validate EmailJS configuration
+      if (!serviceId || !templateId || !userId) {
+        throw new Error(`Missing EmailJS configuration: serviceId=${serviceId}, templateId=${templateId}, userId=${userId}`)
+      }
+      
+      // Initialize EmailJS with the current configuration
+      emailjs.init(userId)
       
       // Send email using EmailJS
       const result = await emailjs.send(
@@ -186,8 +331,68 @@ Your trusted partner for quality wholesale products.
       return { success: true, message: 'Email sent successfully', result }
     } catch (error) {
       console.error('❌ EmailJS error:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
       throw error
     }
+  }
+
+  // Test your specific template with correct variables
+  static async testYourTemplate() {
+    try {
+      console.log('🧪 Testing your template_s1pvkof...')
+      
+      // Use the exact variables your template expects
+      const testData = {
+        to_email: 'test@example.com',
+        order_id: 'TEST-123',
+        customer_name: 'Test Customer',
+        order_total: '$99.99',
+        order_date: new Date().toLocaleDateString()
+      }
+      
+      console.log('Test data:', testData)
+      
+      const result = await this.sendEmail(testData, 'template_s1pvkof')
+      console.log('✅ Your template works!', result)
+      return { success: true, templateId: 'template_s1pvkof', result }
+    } catch (error) {
+      console.log('❌ Your template failed:', error.message)
+      throw error
+    }
+  }
+
+  // Test different EmailJS templates
+  static async testDifferentTemplates() {
+    const templates = [
+      'template_s1pvkof', // Your current template
+      'template_contact_form', // Common default template
+      'template_generic', // Another common template
+      'template_default' // Default template name
+    ]
+    
+    const testData = {
+      to_name: 'Test Customer',
+      to_email: 'test@example.com',
+      message: 'This is a test email from Fevas',
+      from_name: 'Fevas Team'
+    }
+    
+    for (const templateId of templates) {
+      try {
+        console.log(`🧪 Testing template: ${templateId}`)
+        const result = await this.sendEmail(testData, templateId)
+        console.log(`✅ Template ${templateId} works!`, result)
+        return { success: true, templateId, result }
+      } catch (error) {
+        console.log(`❌ Template ${templateId} failed:`, error.message)
+      }
+    }
+    
+    throw new Error('No working templates found')
   }
 }
 

@@ -686,30 +686,52 @@ const Checkout = ({ onClose, onOrderComplete }) => {
     </div>
   )
 
-  const renderPaymentForm = () => (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Information</h3>
-      
-      <StripeCheckout
-        amount={getTotal()}
-        onSuccess={handlePaymentSuccess}
-        onError={handlePaymentError}
-        isProcessing={isProcessing}
-        setIsProcessing={setIsProcessing}
-      />
+  const renderPaymentForm = () => {
+    // Prepare order data for Stripe metadata
+    const orderData = {
+      orderId: `ORD-${Date.now()}`,
+      customer: {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone
+      },
+      totals: {
+        subtotal: getSubtotal(),
+        shipping: getShipping(),
+        tax: getTax(),
+        total: getTotal()
+      },
+      items: cartItems,
+      notes: formData.notes
+    }
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Order Notes</label>
-        <textarea
-          value={formData.notes}
-          onChange={(e) => updateFormData('notes', e.target.value)}
-          rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-          placeholder="Any special instructions or notes..."
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Information</h3>
+        
+        <StripeCheckout
+          amount={getTotal()}
+          orderData={orderData}
+          onSuccess={handlePaymentSuccess}
+          onError={handlePaymentError}
+          isProcessing={isProcessing}
+          setIsProcessing={setIsProcessing}
         />
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Order Notes</label>
+          <textarea
+            value={formData.notes}
+            onChange={(e) => updateFormData('notes', e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            placeholder="Any special instructions or notes..."
+          />
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const renderOrderReview = () => (
     <div className="space-y-6">

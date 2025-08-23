@@ -4,6 +4,8 @@ import { useShipping } from '../context/ShippingContext'
 import { useAdmin } from '../context/AdminContext'
 import OrdersService from '../services/orders'
 import AdminLogin from './AdminLogin'
+import EmailTest from './EmailTest'
+import EmailDiagnostic from './EmailDiagnostic'
 
 const AdminPage = () => {
   const [orders, setOrders] = useState([])
@@ -225,29 +227,41 @@ const AdminPage = () => {
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Order Management</h2>
               <p className="text-gray-600 mt-1">Manage customer orders and create shipping labels</p>
-              {/* Enhanced Debug Info for Mobile */}
-              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-blue-800 text-sm">
-                  <strong>🔍 Current Domain:</strong> {window.location.hostname}
-                </p>
-                <p className="text-blue-800 text-sm">
-                  <strong>📱 Full URL:</strong> {window.location.href}
-                </p>
-                <p className="text-blue-800 text-sm">
-                  <strong>📊 localStorage Available:</strong> {typeof localStorage !== 'undefined' ? 'Yes' : 'No'}
-                </p>
-                <p className="text-blue-800 text-sm">
-                  <strong>📦 localStorage Length:</strong> {typeof localStorage !== 'undefined' ? localStorage.length : 'N/A'}
-                </p>
-                <p className="text-blue-800 text-sm">
-                  <strong>🔑 All localStorage Keys:</strong> {typeof localStorage !== 'undefined' ? Object.keys(localStorage).join(', ') : 'N/A'}
-                </p>
-                <p className="text-blue-800 text-sm">
-                  <strong>📋 Orders Key Exists:</strong> {typeof localStorage !== 'undefined' ? (localStorage.getItem('orders') ? 'Yes' : 'No') : 'N/A'}
-                </p>
-                <p className="text-blue-800 text-sm">
-                  <strong>🛒 Cart Key Exists:</strong> {typeof localStorage !== 'undefined' ? (localStorage.getItem('cartItems') ? 'Yes' : 'No') : 'N/A'}
-                </p>
+                          {/* Enhanced Debug Info for Mobile */}
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800 text-sm">
+                <strong>🔍 Current Domain:</strong> {window.location.hostname}
+              </p>
+              <p className="text-blue-800 text-sm">
+                <strong>📱 Full URL:</strong> {window.location.href}
+              </p>
+              <p className="text-blue-800 text-sm">
+                <strong>📊 localStorage Available:</strong> {typeof localStorage !== 'undefined' ? 'Yes' : 'No'}
+              </p>
+              <p className="text-blue-800 text-sm">
+                <strong>📦 localStorage Length:</strong> {typeof localStorage !== 'undefined' ? localStorage.length : 'N/A'}
+              </p>
+              <p className="text-blue-800 text-sm">
+                <strong>🔑 All localStorage Keys:</strong> {typeof localStorage !== 'undefined' ? Object.keys(localStorage).join(', ') : 'N/A'}
+              </p>
+              <p className="text-blue-800 text-sm">
+                <strong>📋 Orders Key Exists:</strong> {typeof localStorage !== 'undefined' ? (localStorage.getItem('orders') ? 'Yes' : 'No') : 'No'}
+              </p>
+              <p className="text-blue-800 text-sm">
+                <strong>🛒 Cart Key Exists:</strong> {typeof localStorage !== 'undefined' ? (localStorage.getItem('cartItems') ? 'Yes' : 'No') : 'No'}
+              </p>
+              
+              {/* Email Test Section */}
+              <div className="mt-4 pt-3 border-t border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-2">📧 Email Service Test</h4>
+                <EmailTest />
+              </div>
+              
+              {/* Email Diagnostic Section */}
+              <div className="mt-4 pt-3 border-t border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-2">🔍 EmailJS Diagnostic</h4>
+                <EmailDiagnostic />
+              </div>
                 <p className="text-blue-800 text-sm">
                   <strong>📱 User Agent:</strong> {navigator.userAgent.substring(0, 50)}...
                 </p>
